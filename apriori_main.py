@@ -46,15 +46,17 @@ def apriori_gen(Lk_1):
 
     for i in range(len_Lk_1):
         for j in range(i + 1, len_Lk_1):
-            itemset1 = Lk_1[i].split(',')
-            itemset2 = Lk_1[j].split(',')
+            itemset1 = str(Lk_1[i]).split(',')
+            itemset2 = str(Lk_1[j]).split(',')
 
             # print(itemset1[:-1])
             # print(itemset2[:-1])
 
             # if itemset1[:-1] == itemset2[:-1]:
             #     if itemset1[-1] != itemset2[-1]:
-            new_itemset = sorted(itemset1 + [itemset2[-1]])
+            # st.write(itemset1)
+            # st.write(itemset2[-1])
+            new_itemset = sorted(itemset1 + [str(itemset2[-1])])
 
             new_itemsets_before_pruning.append(
                 ','.join(map(str, new_itemset)))
@@ -108,9 +110,6 @@ def filter_by_min_sup(counts, minSup):
     )
 
 
-df = pd.read_csv('./tesco.csv', header=None)
-
-
 file = st.file_uploader('pick datasets',
                         type=['csv'],
                         label_visibility='collapsed',
@@ -140,11 +139,13 @@ minSup = st.number_input('min Support', value=3)
 
 if st.button('start'):
 
-    csv_file = pd.read_csv("DataSet/"+file.name, header=None,)
+    csv_file = pd.read_csv("DataSet/"+file.name,
+                           header=None, error_bad_lines=False)
+
+    st.write(len(csv_file))
+    st.table(csv_file.head(10))
 
     result = apriori(csv_file.values.tolist(), minSup)
 
-    st.table(csv_file)
-
-    st.write(len(result[0]))
-    st.write(len(result[1]))
+    st.write(result[0])
+    st.write(result[1])
