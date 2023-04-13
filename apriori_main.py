@@ -147,5 +147,12 @@ if st.button('start'):
 
     result = apriori(csv_file.values.tolist(), minSup)
 
-    st.write(result[0])
-    st.write(result[1])
+    st.write(len(result[0]))
+    st.write(len(result[1]))
+
+    for i in range(0, len(result)):
+        st.write(f"## iteration {i+1}")
+        st.write(f"### c{i+1}")
+        st.table(result[1][i])
+        st.write(f"### f{i+1}")
+        st.table(result[0][i])
