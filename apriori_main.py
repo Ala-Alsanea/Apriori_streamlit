@@ -5,8 +5,14 @@ import os
 
 
 def apriori(D, minSup):
+    data = []
+    for r in D:
+        row = []
+        for item in r:
+            row.append(item.rstrip())
+        data.append(row)
     L = []
-    result = find_frequent_one_itemsets(D, minSup)
+    result = find_frequent_one_itemsets(data, minSup)
     L1 = result["firstItemSet"]
     # Include the counts from the first itemset
     all_counts = [result["counts"]]
@@ -17,7 +23,7 @@ def apriori(D, minSup):
 
     while isinstance(L[k - 2], list) and len(L[k - 2]) > 0:
         before_pruning_Ck, after_pruning_Ck = apriori_gen(L[k - 2])
-        counts = count_itemsets(after_pruning_Ck, D)
+        counts = count_itemsets(after_pruning_Ck, data)
         all_counts.append(counts)
         Lk = filter_by_min_sup(counts, minSup)
         L.append(Lk)
@@ -31,6 +37,7 @@ def find_frequent_one_itemsets(D, minSup):
 
     for t in D:
         for item in t:
+            item = item.rstrip()
             if str(item) == 'nan':
                 continue
             counts[item] = counts.get(item, 0) + 1
@@ -52,14 +59,21 @@ def apriori_gen(Lk_1):
             # print(itemset1[:-1])
             # print(itemset2[:-1])
 
-            # if itemset1[:-1] == itemset2[:-1]:
-            #     if itemset1[-1] != itemset2[-1]:
-            # st.write(itemset1)
-            # st.write(itemset2[-1])
+            if itemset1[:-1] != itemset2[:-1] and itemset1[-1] == itemset2[-1]:
+                continue
+                # if itemset1[-1] != itemset2[-1]:
+                # st.write('itemset1')
+                # st.write(itemset1)
+                # st.write('itemset2')
+                # st.write(itemset2)
+                # st.write(new_itemset)
             new_itemset = sorted(itemset1 + [str(itemset2[-1])])
 
-            new_itemsets_before_pruning.append(
-                ','.join(map(str, new_itemset)))
+            # else:
+            # #     new_itemset = []
+            if new_itemset in new_itemsets_before_pruning:
+                continue
+            new_itemsets_before_pruning.append(new_itemset)
 
             subsets = get_subsets(new_itemset, len(new_itemset) - 1)
             all_subsets_frequent = all(
@@ -110,6 +124,17 @@ def filter_by_min_sup(counts, minSup):
     )
 
 
+lines = []
+with open("DataSet/fromSlide.csv", "r") as f:
+    for line in f.readlines():
+        lines.append(line.split(','))
+        # if line.strip("\n") != delLine:
+
+result = apriori(lines, 2)
+
+
+#################### ? UI start here ################################
+
 file = st.file_uploader('pick datasets',
                         type=['csv'],
                         label_visibility='collapsed',
@@ -127,32 +152,37 @@ try:
 except OSError:
     pass
 
+lines = []
+# with open("DataSet/"+file.name, "wr") as f:
+for line in file.readlines():
+    lines.append(line.decode('utf-8').split(','))
+    # if line.strip("\n") != delLine:
 
-with open("DataSet/"+file.name, "w") as f:
-    for line in file.readlines():
-        # st.write(line)
-        # if line.strip("\n") != delLine:
-        f.write(line.decode('utf-8'))
 
-
-minSup = st.number_input('min Support', value=3)
+minSup = st.number_input('min Support', value=2)
 
 if st.button('start'):
 
-    csv_file = pd.read_csv("DataSet/"+file.name,
-                           header=None, error_bad_lines=False)
+    # csv_file = pd.read_csv("DataSet/"+file.name,
+    #                        header=None, error_bad_lines=False)
 
-    st.write(len(csv_file))
-    st.table(csv_file.head(10))
+    st.write(len(lines))
+    # st.write('###############')
+    # st.write(csv_file.values.tolist())
+    st.table(lines)
 
-    result = apriori(csv_file.values.tolist(), minSup)
+    result = apriori(lines, minSup)
 
-    st.write(len(result[0]))
-    st.write(len(result[1]))
+    # st.write(result[0])
+    # st.write(result[1])
+    # st.write(result[1])
 
-    for i in range(0, len(result)):
-        st.write(f"## iteration {i+1}")
-        st.write(f"### c{i+1}")
-        st.table(result[1][i])
-        st.write(f"### f{i+1}")
-        st.table(result[0][i])
+    for i in range(0, len(result[0])):
+        try:
+            st.write(f"## iteration {i+1}")
+            st.write(f"### c{i+1}")
+            st.table(result[1][i])
+            st.write(f"### f{i+1}")
+            st.table(result[0][i])
+        except:
+            pass
