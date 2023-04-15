@@ -11,12 +11,26 @@ def apriori(D, minSup):
         for item in r:
             row.append(item.rstrip())
         data.append(row)
+        #! ##############
     L = []
+    Ldict = []
     result = find_frequent_one_itemsets(data, minSup)
     L1 = result["firstItemSet"]
     # Include the counts from the first itemset
     all_counts = [result["counts"]]
-    L.append(L1)
+    L.append(list(L1.keys()))
+    C1 = pd.DataFrame([result["counts"].keys(), result["counts"].values()]).T.rename(
+        columns={0: 'ItemSet', 1: 'Sup-count'})
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'# C{1}')
+        st.dataframe(C1)
+    with col2:
+        st.write(f'# L{1}')
+        st.write(pd.DataFrame(
+            [L1.keys(), L1.values()]).T.rename(
+            columns={0: 'ItemSet', 1: 'Sup-count'}))
+
     k = 2
     # print(isinstance(L[k - 2], list))
     # print(len(L[k - 2]))
@@ -24,11 +38,26 @@ def apriori(D, minSup):
     while isinstance(L[k - 2], list) and len(L[k - 2]) > 0:
         before_pruning_Ck, after_pruning_Ck = apriori_gen(L[k - 2])
         counts = count_itemsets(after_pruning_Ck, data)
-        all_counts.append(counts)
         Lk = filter_by_min_sup(counts, minSup)
-        L.append(Lk)
-        k += 1
+        Ldict.append(Lk)
+        L.append(list(Lk.keys()))
+        Ck = pd.DataFrame(
+            [counts.keys(), counts.values()]).T.rename(
+            columns={0: 'ItemSet', 1: 'Sup-count'})
+        col1, col2 = st.columns(2)
 
+        with col1:
+            st.write(f'# C{k}')
+            st.write(Ck)
+        with col2:
+            st.write(f'# L{k}')
+            st.write(pd.DataFrame(
+                [Lk.keys(), Lk.values()]).T.rename(
+                columns={0: 'ItemSet', 1: 'Sup-count'}))
+        all_counts.append(counts)
+        k += 1
+    st.write(f'### So,the Frequent item sets are in L{L.index(L[-2])+1} ')
+    st.write(Ldict[-2])
     return L, all_counts
 
 
@@ -42,7 +71,8 @@ def find_frequent_one_itemsets(D, minSup):
                 continue
             counts[item] = counts.get(item, 0) + 1
 
-    first_item_set = [item for item in counts.keys() if counts[item] >= minSup]
+    first_item_set = {item: counts[item]
+                      for item in counts.keys() if counts[item] >= minSup}
     return {"firstItemSet": first_item_set, "counts": counts}
 
 
@@ -118,23 +148,20 @@ def count_itemsets(Ck, D):
 
 
 def filter_by_min_sup(counts, minSup):
-    return sorted(
-        [itemset for itemset in counts.keys() if counts[itemset] >= minSup],
-        key=lambda x: list(map(str, x.split(',')))
-    )
+    return {itemset: counts[itemset] for itemset in counts.keys()
+            if counts[itemset] >= minSup}
 
 
-lines = []
-with open("DataSet/fromSlide.csv", "r") as f:
-    for line in f.readlines():
-        lines.append(line.split(','))
-        # if line.strip("\n") != delLine:
+# lines = []
+# with open("DataSet/fromSlide.csv", "r") as f:
+#     for line in f.readlines():
+#         lines.append(line.split(','))
+#         # if line.strip("\n") != delLine:
 
-result = apriori(lines, 2)
+# result = apriori(lines, 2)
 
 
 #################### ? UI start here ################################
-
 file = st.file_uploader('pick datasets',
                         type=['csv'],
                         label_visibility='collapsed',
@@ -177,12 +204,12 @@ if st.button('start'):
     # st.write(result[1])
     # st.write(result[1])
 
-    for i in range(0, len(result[0])):
-        try:
-            st.write(f"## iteration {i+1}")
-            st.write(f"### c{i+1}")
-            st.table(result[1][i])
-            st.write(f"### f{i+1}")
-            st.table(result[0][i])
-        except:
-            pass
+    # for i in range(0, len(result[0])):
+    #     try:
+    #         st.write(f"## iteration {i+1}")
+    #         st.write(f"### c{i+1}")
+    #         st.table(result[1][i])
+    #         st.write(f"### f{i+1}")
+    #         st.table(result[0][i])
+    #     except:
+    #         pass
