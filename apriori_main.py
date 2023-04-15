@@ -4,14 +4,9 @@ import streamlit as st
 import os
 
 
-def apriori(D, minSup):
-    data = []
-    for r in D:
-        row = []
-        for item in r:
-            row.append(item.rstrip())
-        data.append(row)
-        #! ##############
+def apriori(data, minSup):
+
+    #! ##############
     L = []
     Ldict = []
     result = find_frequent_one_itemsets(data, minSup)
@@ -152,6 +147,18 @@ def filter_by_min_sup(counts, minSup):
             if counts[itemset] >= minSup}
 
 
+def prepare_data(D):
+    data = []
+    for r in D:
+        row = []
+        for item in r:
+            item = item.strip()
+            if item != "":
+                row.append(item.rstrip())
+        data.append(row)
+
+    return data
+
 # lines = []
 # with open("DataSet/fromSlide.csv", "r") as f:
 #     for line in f.readlines():
@@ -187,18 +194,19 @@ for line in file.readlines():
 
 
 minSup = st.number_input('min Support', value=2)
+data = prepare_data(lines)
 
 if st.button('start'):
 
     # csv_file = pd.read_csv("DataSet/"+file.name,
     #                        header=None, error_bad_lines=False)
 
-    st.write(len(lines))
+    st.write(len(data))
     # st.write('###############')
     # st.write(csv_file.values.tolist())
-    st.table(lines)
+    st.table(data[0:20])
 
-    result = apriori(lines, minSup)
+    result = apriori(data, minSup)
 
     # st.write(result[0])
     # st.write(result[1])
