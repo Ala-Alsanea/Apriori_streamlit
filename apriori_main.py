@@ -14,6 +14,8 @@ def apriori(data, minSup):
     # Include the counts from the first itemset
     all_counts = [result["counts"]]
     L.append(list(L1.keys()))
+    Ldict.append(L1)
+
     C1 = pd.DataFrame([result["counts"].keys(), result["counts"].values()]).T.rename(
         columns={0: 'ItemSet', 1: 'Sup-count'})
     col1, col2 = st.columns(2)
@@ -30,7 +32,7 @@ def apriori(data, minSup):
     # print(isinstance(L[k - 2], list))
     # print(len(L[k - 2]))
 
-    while isinstance(L[k - 2], list) and len(L[k - 2]) > 0:
+    while len(L[k - 2]) > 0:
         before_pruning_Ck, after_pruning_Ck = apriori_gen(L[k - 2])
         counts = count_itemsets(after_pruning_Ck, data)
         Lk = filter_by_min_sup(counts, minSup)
@@ -51,8 +53,9 @@ def apriori(data, minSup):
                 columns={0: 'ItemSet', 1: 'Sup-count'}))
         all_counts.append(counts)
         k += 1
-    st.write(f'### So,the Frequent item sets are in L{L.index(L[-2])+1} ')
-    st.write(Ldict[-2])
+    if len(Ldict) > 1:
+        st.write(f'### So,the Frequent item sets are in L{L.index(L[-2])+1} ')
+        st.write(Ldict[-2])
     return L, all_counts
 
 
