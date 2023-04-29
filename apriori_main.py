@@ -56,7 +56,48 @@ def apriori(data, minSup):
     if len(Ldict) > 1:
         st.write(f'### So,the Frequent item sets are in L{L.index(L[-2])+1} ')
         st.write(Ldict[-2])
-    return L, all_counts
+
+        all_counts_after_pruning = list2Dict(all_counts)
+        # st.write(f'# all_counts_after_pruning')
+        # st.write(len(all_counts_after_pruning))
+
+        # all_counts_before_pruning = list2Dict(all_counts_before_pruning)
+        # st.write(f'# all_counts_before_pruning')
+        # st.write(len(all_counts_before_pruning))
+
+        for itemset in Ldict[-2]:
+            st.write(f'### {itemset}')
+            subsets = []
+            itemsetList = list(itemset.split(','))
+            # st.write(itemsetList)
+            for i in range(1, len(itemsetList)):
+                itemList = get_subsets(itemsetList, len(itemsetList)-i)
+                for set1 in itemList:
+                    set1 = ','.join(map(str, set1))
+                    subsets.append(set1)
+
+            st.write(subsets)
+
+            for i, Set in zip(range(1, len(subsets)+1), subsets):
+                st.write(f'#### Rule{i} ')
+                st.write(f'{itemset} - {Set}')
+                if all_counts_after_pruning[itemset] < all_counts_after_pruning[Set]:
+                    conf = all_counts_after_pruning[itemset] / \
+                        all_counts_after_pruning[Set]
+                else:
+                    conf = all_counts_after_pruning[Set] / \
+                        all_counts_after_pruning[itemset]
+
+                st.write(
+                    f'support({all_counts_after_pruning[itemset]}) - support({all_counts_after_pruning[Set]}) = {conf}')
+
+
+def list2Dict(list1):
+    dict1 = {}
+    for dict in list1:
+        for key, item in dict.items():
+            dict1.update({key: item})
+    return dict1
 
 
 def find_frequent_one_itemsets(D, minSup):
@@ -209,7 +250,7 @@ if st.button('start'):
     # st.write(csv_file.values.tolist())
     st.table(data[0:20])
 
-    result = apriori(data, minSup)
+    apriori(data, minSup)
 
     # st.write(result[0])
     # st.write(result[1])
