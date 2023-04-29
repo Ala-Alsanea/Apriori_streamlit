@@ -4,7 +4,7 @@ import streamlit as st
 import os
 
 
-def apriori(data, minSup):
+def apriori(data, minSup, minConf=0.7):
 
     #! ##############
     L = []
@@ -12,13 +12,16 @@ def apriori(data, minSup):
     result = find_frequent_one_itemsets(data, minSup)
     L1 = result["firstItemSet"]
     # Include the counts from the first itemset
-    all_counts = [result["counts"]]
+    all_counts_after_pruning = [result["counts"]]
+    all_counts_before_pruning = [result["counts"]]
     L.append(list(L1.keys()))
     Ldict.append(L1)
 
     C1 = pd.DataFrame([result["counts"].keys(), result["counts"].values()]).T.rename(
         columns={0: 'ItemSet', 1: 'Sup-count'})
+
     col1, col2 = st.columns(2)
+
     with col1:
         st.write(f'# C{1}')
         st.dataframe(C1)
@@ -29,17 +32,17 @@ def apriori(data, minSup):
             columns={0: 'ItemSet', 1: 'Sup-count'}))
 
     k = 2
-    # print(isinstance(L[k - 2], list))
-    # print(len(L[k - 2]))
 
+    # to find the Frequent item sets
     while len(L[k - 2]) > 0:
         before_pruning_Ck, after_pruning_Ck = apriori_gen(L[k - 2])
-        counts = count_itemsets(after_pruning_Ck, data)
-        Lk = filter_by_min_sup(counts, minSup)
+        counts_after_pruning = count_itemsets(after_pruning_Ck, data)
+        counts_before_pruning = count_itemsets(before_pruning_Ck, data)
+        Lk = filter_by_min_sup(counts_after_pruning, minSup)
         Ldict.append(Lk)
         L.append(list(Lk.keys()))
         Ck = pd.DataFrame(
-            [counts.keys(), counts.values()]).T.rename(
+            [counts_after_pruning.keys(), counts_after_pruning.values()]).T.rename(
             columns={0: 'ItemSet', 1: 'Sup-count'})
         col1, col2 = st.columns(2)
 
@@ -51,53 +54,29 @@ def apriori(data, minSup):
             st.write(pd.DataFrame(
                 [Lk.keys(), Lk.values()]).T.rename(
                 columns={0: 'ItemSet', 1: 'Sup-count'}))
-        all_counts.append(counts)
+
+        all_counts_before_pruning.append(counts_before_pruning)
+        all_counts_after_pruning.append(counts_after_pruning)
+        # st.write(f'# counts_before_pruning')
+        # st.write(counts_before_pruning)
+
+        # st.write(f'# counts_after_pruning')
+        # st.write(counts_after_pruning)
+
         k += 1
+
+    all_counts_after_pruning = list2Dict(all_counts_after_pruning)
+    # st.write(f'# all_counts_after_pruning')
+    # st.write(len(all_counts_after_pruning))
+
+    all_counts_before_pruning = list2Dict(all_counts_before_pruning)
+    # st.write(f'# all_counts_before_pruning')
+    # st.write(len(all_counts_before_pruning))
+
     if len(Ldict) > 1:
         st.write(f'### So,the Frequent item sets are in L{L.index(L[-2])+1} ')
         st.write(Ldict[-2])
-
-        all_counts_after_pruning = list2Dict(all_counts)
-        # st.write(f'# all_counts_after_pruning')
-        # st.write(len(all_counts_after_pruning))
-
-        # all_counts_before_pruning = list2Dict(all_counts_before_pruning)
-        # st.write(f'# all_counts_before_pruning')
-        # st.write(len(all_counts_before_pruning))
-
-        for itemset in Ldict[-2]:
-            st.write(f'### {itemset}')
-            subsets = []
-            itemsetList = list(itemset.split(','))
-            # st.write(itemsetList)
-            for i in range(1, len(itemsetList)):
-                itemList = get_subsets(itemsetList, len(itemsetList)-i)
-                for set1 in itemList:
-                    set1 = ','.join(map(str, set1))
-                    subsets.append(set1)
-
-            st.write(subsets)
-
-            for i, Set in zip(range(1, len(subsets)+1), subsets):
-                st.write(f'#### Rule{i} ')
-                st.write(f'{itemset} - {Set}')
-                if all_counts_after_pruning[itemset] < all_counts_after_pruning[Set]:
-                    conf = all_counts_after_pruning[itemset] / \
-                        all_counts_after_pruning[Set]
-                else:
-                    conf = all_counts_after_pruning[Set] / \
-                        all_counts_after_pruning[itemset]
-
-                st.write(
-                    f'support({all_counts_after_pruning[itemset]}) - support({all_counts_after_pruning[Set]}) = {conf}')
-
-
-def list2Dict(list1):
-    dict1 = {}
-    for dict in list1:
-        for key, item in dict.items():
-            dict1.update({key: item})
-    return dict1
+    return L, all_counts
 
 
 def find_frequent_one_itemsets(D, minSup):
@@ -130,19 +109,16 @@ def apriori_gen(Lk_1):
 
             if itemset1[:-1] != itemset2[:-1] and itemset1[-1] == itemset2[-1]:
                 continue
-                # if itemset1[-1] != itemset2[-1]:
-                # st.write('itemset1')
-                # st.write(itemset1)
-                # st.write('itemset2')
-                # st.write(itemset2)
-                # st.write(new_itemset)
+
             new_itemset = sorted(itemset1 + [str(itemset2[-1])])
 
             # else:
             # #     new_itemset = []
             if new_itemset in new_itemsets_before_pruning:
                 continue
-            new_itemsets_before_pruning.append(new_itemset)
+
+            new_itemsets_before_pruning.append(
+                ','.join(map(str, new_itemset)))
 
             subsets = get_subsets(new_itemset, len(new_itemset) - 1)
             all_subsets_frequent = all(
