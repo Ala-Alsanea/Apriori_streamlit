@@ -213,6 +213,15 @@ def prepare_data(D):
 
 
 #################### ? UI start here ################################
+
+datasetLocation = {
+    "fromSlide.csv": 'DataSet/fromSlide.csv',
+    "retail_dataset.csv": 'DataSet/retail_dataset.csv',
+    "tesco.csv": 'DataSet/tesco.csv',
+}
+
+selected = st.selectbox(label='Pick dataset', options=datasetLocation.keys())
+
 file = st.file_uploader('pick datasets',
                         type=['csv'],
                         label_visibility='collapsed',
@@ -222,18 +231,20 @@ file = st.file_uploader('pick datasets',
 # st.write(dir(file))
 
 
-if file is None:
-    exit()
-
-try:
-    os.mkdir('DataSet')
-except OSError:
-    pass
-
 lines = []
-# with open("DataSet/"+file.name, "wr") as f:
-for line in file.readlines():
-    lines.append(line.decode('utf-8').split(','))
+if file is None:
+    with open(datasetLocation[selected], "r") as f:
+        for line in f.readlines():
+            lines.append(line.split(','))
+else:
+    try:
+        os.mkdir('DataSet')
+    except OSError:
+        pass
+
+    # with open("DataSet/"+file.name, "wr") as f:
+    for line in file.readlines():
+        lines.append(line.decode('utf-8').split(','))
     # if line.strip("\n") != delLine:
 
 
@@ -251,17 +262,3 @@ if st.button('start'):
     st.table(data[0:20])
 
     apriori(data, minSup)
-
-    # st.write(result[0])
-    # st.write(result[1])
-    # st.write(result[1])
-
-    # for i in range(0, len(result[0])):
-    #     try:
-    #         st.write(f"## iteration {i+1}")
-    #         st.write(f"### c{i+1}")
-    #         st.table(result[1][i])
-    #         st.write(f"### f{i+1}")
-    #         st.table(result[0][i])
-    #     except:
-    #         pass
