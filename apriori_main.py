@@ -4,7 +4,7 @@ import streamlit as st
 import os
 
 
-def apriori(data, minSup):
+def apriori(data, minSup, minConf=0.7):
 
     #! ##############
     L = []
@@ -29,8 +29,6 @@ def apriori(data, minSup):
             columns={0: 'ItemSet', 1: 'Sup-count'}))
 
     k = 2
-    # print(isinstance(L[k - 2], list))
-    # print(len(L[k - 2]))
 
     while len(L[k - 2]) > 0:
         before_pruning_Ck, after_pruning_Ck = apriori_gen(L[k - 2])
@@ -64,9 +62,10 @@ def apriori(data, minSup):
         # all_counts_before_pruning = list2Dict(all_counts_before_pruning)
         # st.write(f'# all_counts_before_pruning')
         # st.write(len(all_counts_before_pruning))
-
+        rules = []
         for itemset in Ldict[-2]:
-            st.write(f'### {itemset}')
+            # st.write(f'---------------')
+            # st.write(f'### {itemset}')
             subsets = []
             itemsetList = list(itemset.split(','))
             # st.write(itemsetList)
@@ -76,20 +75,30 @@ def apriori(data, minSup):
                     set1 = ','.join(map(str, set1))
                     subsets.append(set1)
 
-            st.write(subsets)
+            # st.write("###### subsets")
+            # st.write(subsets)
 
             for i, Set in zip(range(1, len(subsets)+1), subsets):
-                st.write(f'#### Rule{i} ')
-                st.write(f'{itemset} - {Set}')
-                if all_counts_after_pruning[itemset] < all_counts_after_pruning[Set]:
-                    conf = all_counts_after_pruning[itemset] / \
-                        all_counts_after_pruning[Set]
-                else:
-                    conf = all_counts_after_pruning[Set] / \
-                        all_counts_after_pruning[itemset]
+                # st.write(f'---')
+                # st.write(f'#### Rule{i} of ({itemset}) ')
+                # st.write(f'confidant = support({itemset}) / support({Set})')
+                # if all_counts_after_pruning[itemset] < all_counts_after_pruning[Set]:
+                conf = all_counts_after_pruning[itemset] / \
+                    all_counts_after_pruning[Set]
+                # else:
+                #     conf = all_counts_after_pruning[Set] / \
+                #         all_counts_after_pruning[itemset]
 
-                st.write(
-                    f'support({all_counts_after_pruning[itemset]}) - support({all_counts_after_pruning[Set]}) = {conf}')
+                rules.append(
+                    [itemset, Set, conf, "accepted" if conf >= minConf else "not accepted"])
+                # st.write(
+                #     f'confidant = support({all_counts_after_pruning[itemset]}) / support({all_counts_after_pruning[Set]}) = {conf}')
+                # st.write(
+                #     f'##### {"accepted" if conf>=minConf else "not accepted"}')
+        dfRules = pd.DataFrame(
+            rules, columns=['itemset', 'subset', 'confidence', 'accepted'])
+        st.write(f"# Discovering ARs From L{L.index(L[-2])+1}")
+        st.table(dfRules)
 
 
 def list2Dict(list1):
@@ -130,21 +139,15 @@ def apriori_gen(Lk_1):
 
             if itemset1[:-1] != itemset2[:-1] and itemset1[-1] == itemset2[-1]:
                 continue
-                # if itemset1[-1] != itemset2[-1]:
-                # st.write('itemset1')
-                # st.write(itemset1)
-                # st.write('itemset2')
-                # st.write(itemset2)
-                # st.write(new_itemset)
+
             new_itemset = sorted(itemset1 + [str(itemset2[-1])])
 
-            # else:
-            # #     new_itemset = []
             if new_itemset in new_itemsets_before_pruning:
                 continue
             new_itemsets_before_pruning.append(new_itemset)
 
             subsets = get_subsets(new_itemset, len(new_itemset) - 1)
+
             all_subsets_frequent = all(
                 ','.join(map(str, subset)) in Lk_1 for subset in subsets
             )
@@ -249,16 +252,17 @@ else:
 
 
 minSup = st.number_input('min Support', value=2)
+minConf = st.slider('min confidant', min_value=0.1, max_value=0.99, value=0.7)
 data = prepare_data(lines)
+st.write(len(data))
 
 if st.button('start'):
 
     # csv_file = pd.read_csv("DataSet/"+file.name,
     #                        header=None, error_bad_lines=False)
 
-    st.write(len(data))
     # st.write('###############')
     # st.write(csv_file.values.tolist())
     st.table(data[0:20])
 
-    apriori(data, minSup)
+    apriori(data, minSup, minConf)
